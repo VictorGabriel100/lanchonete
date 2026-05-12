@@ -54,3 +54,46 @@ def test_fluxo_completo_pedido(client):
     r3 = client.post(f"/lanchonete/pedidos/{cod_pedido}/finalizar")
     assert r3.status_code == 200
     assert r3.json()["total"] == 29.0
+
+async def test_pedido_nao_deve_aceitar_item_acima_do_limite(client):
+
+
+
+    await client.post(
+            "/clientes",
+            json={"cpf": "99988877766", "nome": "Cliente Limite"}
+    )
+
+
+    await client.post(
+            "/produtos",
+            json={"codigo": 10, "valor": 15, "tipo": 1, "desconto_percentual": 0}
+    )
+
+    await client.post(
+            "/produtos",
+            json={"codigo": 20, "valor": 30, "tipo": 1, "desconto_percentual": 0}
+    )
+
+
+    r = await client.post(
+            "/lanchonete/pedidos",
+            json={
+                "cpf": "99988877766",
+                "cod_produto": 10,
+                "qtd_max_produtos": 1
+            }
+    )
+
+    assert r.status_code == 200
+
+    cod_pedido = r.json()["codigo"]
+
+
+    r2 = await client.put(
+            f"/lanchonete/pedidos/{cod_pedido}/itens",
+            json={"cod_produto": 20}
+    )
+
+
+    assert r2.status_code == 4000
